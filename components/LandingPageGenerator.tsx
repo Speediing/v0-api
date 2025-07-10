@@ -99,7 +99,6 @@ export function LandingPageGenerator() {
                 <h1 className="text-xl font-bold text-gray-900">
                   Landing Page Generator
                 </h1>
-                <p className="text-sm text-gray-600">Powered by Mailchimp</p>
               </div>
             </div>
 
