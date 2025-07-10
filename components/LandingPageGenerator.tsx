@@ -23,10 +23,13 @@ interface BusinessData {
 
 interface GeneratedLandingPage {
   id: string;
-  html: string;
-  css: string;
   generatedAt: string;
   businessData: BusinessData;
+  v0ChatId?: string;
+  v0Url?: string;
+  demo?: string;
+  content: string;
+  _isMock?: boolean;
 }
 
 export function LandingPageGenerator() {

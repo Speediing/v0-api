@@ -18,17 +18,41 @@ interface BusinessData {
 
 interface GeneratedLandingPage {
   id: string;
-  html: string;
-  css: string;
   generatedAt: string;
   businessData: BusinessData;
   v0ChatId?: string;
   v0Url?: string;
   demo?: string; // Added for iframe URL
+  content: string; // Changed from html to content
+  _isMock?: boolean; // Added for mock indicator
+}
+
+interface V0File {
+  lang: string;
+  source: string;
+}
+
+interface V0MessageResponse {
+  id: string;
+  text: string;
+  files?: V0File[];
+  url?: string;
+  demo?: string;
+}
+
+interface V0ApiData {
+  message?: string;
+  chatId?: string;
+  modelConfiguration?: {
+    modelId: string;
+    imageGenerations: boolean;
+    thinking: boolean;
+  };
+  chatPrivacy?: string;
 }
 
 // Helper function to call v0 API via server-side endpoint
-async function callV0API(endpoint: string, data: any) {
+async function callV0API(endpoint: string, data: V0ApiData) {
   const response = await fetch(`/api/v0/${endpoint}`, {
     method: "POST",
     headers: {
@@ -133,13 +157,12 @@ Make it visually appealing and conversion-focused for ${businessData.tone.toLowe
     // Extract the generated content
     const generatedPage: GeneratedLandingPage = {
       id: `v0-landing-${response.id}`,
-      html: response.text || "", // The generated React component code
-      css: "", // v0 uses Tailwind, so no separate CSS
       generatedAt: new Date().toISOString(),
       businessData,
       v0ChatId: response.id,
       v0Url: response.url,
       demo: response.demo, // The iframe URL for preview
+      content: response.text || "", // The generated React component code
     };
 
     return generatedPage;
@@ -159,7 +182,7 @@ export async function regenerateLandingPage(
 ): Promise<GeneratedLandingPage> {
   try {
     // Send a message to the existing chat with feedback
-    const messageResponse = await callV0API("message", {
+    const messageResponse: V0MessageResponse = await callV0API("message", {
       chatId,
       message: `Please refine the landing page based on this feedback: ${feedback}`,
     });
@@ -171,31 +194,25 @@ export async function regenerateLandingPage(
 
     // Extract the updated content
     let htmlContent = "";
-    let cssContent = "";
 
     if (messageResponse.files && messageResponse.files.length > 0) {
       const htmlFile = messageResponse.files.find(
-        (file: any) =>
+        (file: V0File) =>
           file.lang === "tsx" || file.lang === "jsx" || file.lang === "html"
-      );
-      const cssFile = messageResponse.files.find(
-        (file: any) => file.lang === "css" || file.lang === "scss"
       );
 
       htmlContent = htmlFile?.source || messageResponse.text || "";
-      cssContent = cssFile?.source || "";
     } else {
       htmlContent = messageResponse.text || "";
     }
 
     return {
       id: `v0-landing-${chatId}-updated`,
-      html: htmlContent,
-      css: cssContent,
       generatedAt: new Date().toISOString(),
       businessData: {} as BusinessData, // Would need to be stored/retrieved
       v0ChatId: chatId,
       v0Url: chatResponse.url,
+      content: htmlContent,
     };
   } catch (error) {
     console.error("Error regenerating landing page:", error);
